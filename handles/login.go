@@ -3,6 +3,7 @@ package handles
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/labstack/echo"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -18,38 +19,38 @@ func loginUser(username string, password string) (bool, error) {
 	return true, nil
 }
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
+func LoginHandler(c echo.Context) error {
+	w := c.Response()
+	r := c.Request()
 	if r.Method != http.MethodPost {
-		w.WriteHeader(405) // Return 405 Method Not Allowed.
-		return
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return nil
 	}
-	// Read request body.
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Body read error, %v", err)
-		w.WriteHeader(500) // Return 500 Internal Server Error.
-		return
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil
 	}
-
-	// Parse body as json.
 	var schema loginSchema
 	if err = json.Unmarshal(body, &schema); err != nil {
 		log.Printf("Body parse error, %v", err)
-		w.WriteHeader(400) // Return 400 Bad Request.
-		return
+		w.WriteHeader(http.StatusBadRequest)
+		return nil
 	}
 
 	ok, err := loginUser(schema.Username, schema.Password)
 	if err != nil {
 		log.Printf("Login user DB error, %v", err)
-		w.WriteHeader(500) // Return 500 Internal Server Error.
-		return
+		w.WriteHeader(http.StatusInternalServerError)
+		return nil
 	}
 
 	if !ok {
 		log.Printf("Unauthorized access for user: %v", schema.Username)
-		w.WriteHeader(401) // Wrong password or username, Return 401.
-		return
+		w.WriteHeader(http.StatusUnauthorized)
+		return nil
 	}
-	w.WriteHeader(200) // Successfully logged in.
+	w.WriteHeader(http.StatusOK)
+	return nil
 }

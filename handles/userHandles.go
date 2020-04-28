@@ -1,8 +1,11 @@
 package handles
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/labstack/echo"
 )
 
 type (
@@ -26,15 +29,12 @@ func CreateUser(c echo.Context) error {
 	}
 	users[u.ID] = u
 	seq++
-	err := respondHeader(c, *u)
-	if err != nil {
-		panic("Failed")
-	}
 	return c.JSON(http.StatusCreated, u)
 }
 
 func GetUser(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
+	fmt.Println("Hey: ", users[id])
 	return c.JSON(http.StatusOK, users[id])
 }
 

@@ -3,23 +3,28 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apiGatewayCore/handles"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os/exec"
 	"time"
-
-	"github.com/apiGatewayCore/handles"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 )
 
+//type (
+//	user struct {
+//		ID   int    `json:"id"`
+//		Name string `json:"name"`
+//	}
+//)
 
-func respondHeader(c echo.Context, u user) error {
-	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-	c.Response().WriteHeader(http.StatusOK)
-	return json.NewEncoder(c.Response()).Encode(u)
-}
+//func respondHeader(c echo.Context, u user) error {
+//	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+//	c.Response().WriteHeader(http.StatusOK)
+//	return json.NewEncoder(c.Response()).Encode(u)
+//}
 
 func changedGenerator() string {
 	out, err := exec.Command("uuidgen").Output()
@@ -40,13 +45,13 @@ func main() {
 		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
-	e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
-		TokenLength:  32,
-		TokenLookup:  "header:" + echo.HeaderXCSRFToken,
-		ContextKey:   "csrf",
-		CookieName:   "_csrf",
-		CookieMaxAge: 86400,
-	}))
+	//e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
+	//	TokenLength:  32,
+	//	TokenLookup:  "header:" + echo.HeaderXCSRFToken,
+	//	ContextKey:   "csrf",
+	//	CookieName:   "_csrf",
+	//	CookieMaxAge: 86400,
+	//}))
 	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 		Generator: func() string {
 			return changedGenerator()
@@ -54,10 +59,10 @@ func main() {
 	}))
 
 	e.POST("/users", handles.CreateUser)
+	e.POST("/login/", handles.LoginHandler)
 	e.GET("/users/:id", handles.GetUser)
 	e.PUT("/users/:id", handles.UpdateUser)
 	e.DELETE("/users/:id", handles.DeleteUser)
-	e.POST("/login/", handles.LoginHandler)
 	e.HTTPErrorHandler = handles.CustomHTTPErrorHandler
 
 	data, errs := json.MarshalIndent(e.Routes(), "", "  ")
