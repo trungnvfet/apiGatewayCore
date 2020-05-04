@@ -13,19 +13,6 @@ import (
 	"time"
 )
 
-//type (
-//	user struct {
-//		ID   int    `json:"id"`
-//		Name string `json:"name"`
-//	}
-//)
-
-//func respondHeader(c echo.Context, u user) error {
-//	c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-//	c.Response().WriteHeader(http.StatusOK)
-//	return json.NewEncoder(c.Response()).Encode(u)
-//}
-
 func changedGenerator() string {
 	out, err := exec.Command("uuidgen").Output()
 	if err != nil {
@@ -50,17 +37,23 @@ func main() {
 	//	TokenLookup:  "header:" + echo.HeaderXCSRFToken,
 	//	ContextKey:   "csrf",
 	//	CookieName:   "_csrf",
+	//	//TokenLookup: "form:csrf",
 	//	CookieMaxAge: 86400,
 	//}))
+
+	var IsValidate = middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey: []byte("secret"),
+	})
 	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 		Generator: func() string {
 			return changedGenerator()
 		},
 	}))
 
-	e.POST("/users", handles.CreateUser)
+	e.POST("/users", handles.CreateUser, IsValidate)
 	e.POST("/login/", handles.LoginHandler)
-	e.GET("/users/:id", handles.GetUser)
+	e.POST("/token/", handles.GenToken)
+	e.GET("/users/:id", handles.GetUser, IsValidate)
 	e.PUT("/users/:id", handles.UpdateUser)
 	e.DELETE("/users/:id", handles.DeleteUser)
 	e.HTTPErrorHandler = handles.CustomHTTPErrorHandler
@@ -69,7 +62,10 @@ func main() {
 	if errs != nil {
 		return
 	}
-	ioutil.WriteFile("/tmp/routes.json", data, 0644)
+	err := ioutil.WriteFile("/tmp/routes.json", data, 0644)
+	if err != nil {
+		fmt.Println("Error to write json file in /tmp")
+	}
 
 	s := &http.Server{
 		Addr:              ":2020",
